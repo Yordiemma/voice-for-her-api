@@ -77,7 +77,28 @@ app.post('/reports', (req, res) => {
   });
 });
 
+// DELETE /reports/:id/contact
+app.delete('/reports/:id/contact', (req, res) => {
+  const { token } = req.body;
 
+  if (!token) {
+    return res.status(401).json({
+      error: 'Contact removal token is required'
+    });
+  }
+
+
+  // Real DB check comes later
+  if (typeof token !== 'string' || token.length < 20) {
+    return res.status(401).json({
+      error: 'Invalid token'
+    });
+  }
+
+  return res.status(200).json({
+    message: 'Contact information removed'
+  });
+});
 
 
 

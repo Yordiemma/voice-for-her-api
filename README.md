@@ -116,9 +116,3 @@ This endpoint provides summary data used for charts and graphs, such as reports 
 Voice for Her is a backend API designed for anonymous abuse reporting with a focus on privacy, security, and responsible data handling using proper HTTP and REST principles.
 
 ---
-
-If you want next, I can:
-
-* quickly **proof-check** this one last time
-* help you **commit and push**
-* or help you align it exactly with your school rubric
