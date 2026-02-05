@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 require('dotenv').config();
 
+// Connect to MongoDB using environment variables
 const { connectDB, Report } = require('./db');
 connectDB();
 
@@ -18,7 +19,7 @@ app.get('/', (req, res) => {
 
 
 
-// GET /stats (admin / teacher / homepage)
+// Returns aggregated, anonymous statistics 
 app.get('/stats', async (req, res) => {
   try {
     const totalReports = await Report.countDocuments();
@@ -41,7 +42,7 @@ app.get('/stats', async (req, res) => {
   }
 });
 
-
+// Create a new  abuse report
 app.post('/reports', async (req, res) => {
   const { abuseType, age, country, contactInfo } = req.body;
   const ip = req.ip;
@@ -91,7 +92,7 @@ app.post('/reports', async (req, res) => {
 });
 
 });
-
+// Remove optional contact information using a secure token
 app.delete('/reports/contact', async (req, res) => {
   if (!req.body || !req.body.token) {
     return res.status(400).json({ error: 'Token required' });
