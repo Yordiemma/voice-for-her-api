@@ -1,53 +1,62 @@
 const express = require('express');
 const app = express();
-
 require('dotenv').config();
 
-const connectDB = require('./db');
+const { connectDB, Report } = require('./db');
 connectDB();
 
-const PORT = process.env.PORT || 3000;
-
 const crypto = require('crypto');
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-
 const rateLimitStore = {};
-
 
 app.get('/', (req, res) => {
   res.status(200).send('Voice for Her API is running');
 });
 
 
-// POST /reports
-app.post('/reports', (req, res) => {
+
+// GET /stats (admin / teacher / homepage)
+app.get('/stats', async (req, res) => {
+  try {
+    const totalReports = await Report.countDocuments();
+
+    const byCountry = await Report.aggregate([
+      { $group: { _id: '$country', count: { $sum: 1 } } }
+    ]);
+
+    const byAbuseType = await Report.aggregate([
+      { $group: { _id: '$abuseType', count: { $sum: 1 } } }
+    ]);
+
+    res.status(200).json({
+      totalReports,
+      byCountry,
+      byAbuseType
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load statistics' });
+  }
+});
+
+
+app.post('/reports', async (req, res) => {
   const { abuseType, age, country, contactInfo } = req.body;
   const ip = req.ip;
   const now = Date.now();
 
-  // ---- RATE LIMIT: 2 reports per 3 hours ----
   const THREE_HOURS = 3 * 60 * 60 * 1000;
 
-  if (!rateLimitStore[ip]) {
-    rateLimitStore[ip] = [];
-  }
-
-  // remove old timestamps
-  rateLimitStore[ip] = rateLimitStore[ip].filter(
-    time => now - time < THREE_HOURS
-  );
+  if (!rateLimitStore[ip]) rateLimitStore[ip] = [];
+  rateLimitStore[ip] = rateLimitStore[ip].filter(t => now - t < THREE_HOURS);
 
   if (rateLimitStore[ip].length >= 2) {
-    return res.status(429).json({
-      error: 'Too many reports from this IP. Please try again later.'
-    });
+    return res.status(429).json({ error: 'Too many reports' });
   }
 
-  // ---- INPUT VALIDATION ----
   const allowedTypes = ['physical', 'verbal', 'emotional', 'sexual', 'online'];
-
   if (!allowedTypes.includes(abuseType)) {
     return res.status(400).json({ error: 'Invalid abuse type' });
   }
@@ -57,19 +66,22 @@ app.post('/reports', (req, res) => {
   }
 
   if (!country || typeof country !== 'string') {
-    return res.status(400).json({ error: 'Country is required' });
+    return res.status(400).json({ error: 'Country required' });
   }
 
-  // ---- TOKEN GENERATION only if contact info exists) ----
   let contactRemovalToken = null;
+  if (contactInfo) contactRemovalToken = crypto.randomUUID();
 
-  if (contactInfo) {
-    contactRemovalToken = crypto.randomUUID();
-  }
+  const report = new Report({
+    abuseType,
+    age,
+    country,
+    contactInfo,
+    contactRemovalToken
+  });
 
-  // ---- SAVE RATE LIMIT ----
+  await report.save();
   rateLimitStore[ip].push(now);
-
 
   res.status(201).json({
     message: 'Report submitted successfully',
@@ -77,9 +89,24 @@ app.post('/reports', (req, res) => {
   });
 });
 
+app.delete('/reports/contact', async (req, res) => {
+  const { token } = req.body;
 
+  if (!token) {
+    return res.status(401).json({ error: 'Token required' });
+  }
 
+  const report = await Report.findOne({ contactRemovalToken: token });
+  if (!report) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
 
+  report.contactInfo = undefined;
+  report.contactRemovalToken = undefined;
+  await report.save();
+
+  res.status(200).json({ message: 'Contact information removed' });
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
