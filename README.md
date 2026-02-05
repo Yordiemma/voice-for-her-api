@@ -107,12 +107,58 @@ This endpoint provides summary data used for charts and graphs, such as reports 
 * Contact removal requires a secure token
 * Tokens are generated once and stored securely
 * IP addresses are used only for abuse prevention
-* Personal data is not exposed through public endpoints
+* optional contact infornation  is not exposed through public endpoints
 
 ---
 
 ## Summary
 
 Voice for Her is a backend API designed for anonymous abuse reporting with a focus on privacy, security, and responsible data handling using proper HTTP and REST principles.
+
+---
+Got it. **Ultra-simple. No extras. No explanations.**
+This is the cleanest possible version.
+
+You can paste this directly into your README.
+
+---
+
+## How to Run the API
+
+1. Clone the repository
+
+```bash
+git clone https://github.com/Yordiemma/voice-for-her-api.git
+
+
+
+2. Install dependencies
+
+
+npm install
+
+
+3. Create a `.env` file and add the required environment variables.
+
+4. Start the server
+
+
+node App.js
+
+
+5. The API runs at
+
+
+http://localhost:3000
+
+
+---
+
+## Endpoints
+
+* `GET /`
+* `POST /reports`
+* `DELETE /reports/contact`
+* `GET /stats`
 
 ---
