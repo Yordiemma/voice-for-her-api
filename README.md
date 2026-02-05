@@ -142,8 +142,8 @@ npm install
 
 4. Start the server
 
-```bash
-npm start
+
+node App.js
 
 
 5. The API runs at

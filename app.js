@@ -83,18 +83,21 @@ app.post('/reports', async (req, res) => {
   await report.save();
   rateLimitStore[ip].push(now);
 
-  res.status(201).json({
-    message: 'Report submitted successfully',
-    contactRemovalToken
-  });
+ res.status(201).json({
+  message: contactRemovalToken
+    ? 'Report submitted successfully. Save your token if you want to delete your contact information later.'
+    : 'Report submitted successfully',
+  contactRemovalToken
+});
+
 });
 
 app.delete('/reports/contact', async (req, res) => {
-  const { token } = req.body;
-
-  if (!token) {
-    return res.status(401).json({ error: 'Token required' });
+  if (!req.body || !req.body.token) {
+    return res.status(400).json({ error: 'Token required' });
   }
+
+  const { token } = req.body;
 
   const report = await Report.findOne({ contactRemovalToken: token });
   if (!report) {

@@ -1,1 +1,22 @@
-GET http:/localhost:3000/
+GET http://localhost:3000/
+###
+
+
+POST http://localhost:3000/reports
+Content-Type: application/json
+
+{
+  "abuseType": "verbal",
+  "age": 30,
+  "country": "Sweden",
+  "contactInfo": "yu@email.com"
+}
+#####
+GET http://localhost:3000/stats
+###
+DELETE http://localhost:3000/reports/contact
+Content-Type: application/json
+
+{
+  "token": ""
+}
