@@ -7,7 +7,19 @@ const { connectDB, Report } = require('./db');
 connectDB();
 
 const crypto = require('crypto');
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
 
 app.use(express.json());
 
@@ -42,6 +54,18 @@ app.get('/stats', async (req, res) => {
   }
 });
 
+app.get('/reports', async (req, res) => {
+  try {
+    const reports = await Report.find({}, '-contactRemovalToken').sort({
+      createdAt: -1
+    });
+
+    res.status(200).json({ reports });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load reports' });
+  }
+});
+
 // Create a new  abuse report
 app.post('/reports', async (req, res) => {
   const { abuseType, age, country, contactInfo } = req.body;
@@ -57,7 +81,16 @@ app.post('/reports', async (req, res) => {
     return res.status(429).json({ error: 'Too many reports' });
   }
 
-  const allowedTypes = ['physical', 'verbal', 'emotional', 'sexual', 'online'];
+  const allowedTypes = [
+    'physical',
+    'verbal',
+    'emotional',
+    'sexual',
+    'online',
+    'neglect',
+    'forced marriage',
+    'other'
+  ];
   if (!allowedTypes.includes(abuseType)) {
     return res.status(400).json({ error: 'Invalid abuse type' });
   }
@@ -66,7 +99,7 @@ app.post('/reports', async (req, res) => {
     return res.status(400).json({ error: 'Invalid age' });
   }
 
-  if (!country || typeof country !== 'string') {
+  if (!country || typeof country !== 'string' || !country.trim()) {
     return res.status(400).json({ error: 'Country required' });
   }
 
@@ -76,7 +109,7 @@ app.post('/reports', async (req, res) => {
   const report = new Report({
     abuseType,
     age,
-    country,
+    country: country.trim(),
     contactInfo,
     contactRemovalToken
   });
